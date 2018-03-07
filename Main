@@ -1,0 +1,2387 @@
+;This is my program for priting a ascii table I'm going to explain how I think everypart of it is supposed to work, and what bugs I encounted and couldn't take out
+;Over all we start by desginating the variable counter and moving the es register to 0b800h. After that we jump to begining where the
+;talbe is printed as well as the first page that I set it on. After the first page is printed I 
+;jump back to the front of the program where the user can input '-' to go back, '+' t go forward and 'Q' to end the program. 
+;From there the program will use what I called BOOSTS which is jumps across one page to get to the other.
+;the BOOOST jumps are surrouned by avoidboost jumps so that if the current page is running it dosen't have any chance of jumping off to another 
+;page. 
+
+
+assume cs:cseg, 
+cseg segment 'PROJECT' 
+	org 100h
+
+start: 
+	mov ax, 0b800h
+	mov es, ax
+	COUNTER dw 31h
+	mov [COUNTER], 1731h
+
+	CHARACTER db "CHARACTER"
+	HEXADECIMAL db "HEXADECIMAL"
+	DECIMAL db "DECIMAL"
+	OCTADECIMAL db "OCTADECIMAL"
+	NULL db "[NULL]"
+	STARTOFHEADING db "[START OF HEADING]"
+	STARTOFTEXT db "[START OF TEXT]"
+	ENDOFTEXT db "[END OF TEXT]"
+	ENDOFTRANSMISSION db "[END OF TRANSMISSION]"
+	ENQUIRY db "[ENQUIRY]"
+	ACKNOWLEDGE db "[ACKNOWLEDGE]"
+	BELL db "[BELL]"
+	BACKSPACE db "[BACKSPACE]"
+	HORIZONTALTAB db "[HORIZONTAL TAB]"
+	L db "[LINE FEED]"
+	VERTICALTAB db "[VERTICAL TAB]"
+	CARRIAGERETURN db "[CARRIAGE RETURN]"
+	SHIFTOUT db "[SHIFT OUT]"
+	SHIFTIN db "[SHIFT IN]"
+	DATALINKESCAPE db "[DATA LINK ESCAPE]"
+	DEVICECONTROL1 db "[DEVICE CONTROL 1]"
+	DEVICECONTROL2 db "[DEVICE CONTROL 2]"
+	DEVICECONTROL3 db "[DEVICE CONTROL 3]"
+	DEVICECONTROL4 db "[DEVICE CONTROL 4]"
+	NEGATIVEACKNOWLEDGE db "[NEGATIVE ACKNOWLEDGE]"
+	SYNCHRONOUSIDLE db "[SYNCHRONOUS IDLE]"
+	ENDOFTRANSBLOCK db "[END OF TRANS. BLOCK]"
+	CANCEL db "[CANCEL]"
+	ENDOFMEDIUM db "[END OF MEDIUM]"
+	SUBSTITUTE db "[SUBSTITUTE]"
+	ESCAPE db "[ESCAPE]"
+	FILESEPARATOR db "[FILE SEPARATOR]"
+	GROUPSEPARATOR db "[GROUP SEPARATOR]"
+	RECORDSEPARATOR db "[RECORD SEPARATOR]"
+	UNITSEPARATOR db "[UNIT SEPARATOR]"
+	SPACE db "[SPACE]"
+
+	saved dw 25*80 dup(?)
+
+	jmp begin
+
+done: 
+	sub si,si
+	mov cx,25*80
+	sub di,di
+	L1:
+		mov ax, saved[si]
+		mov es:[si], ax
+		inc si
+		inc si
+		inc di
+		inc di
+	loop L1
+
+	int 20h
+
+front:	
+	mov bx, [COUNTER]
+	mov es:[3998], bx
+	
+	mov ah,1h
+	int 21h
+	mov ah,2h
+	mov dl,al
+	int 21h
+	cmp al, 2Bh
+	je PLUS
+	cmp al, 2Dh
+	je MINUS
+	cmp al, 51h
+	je done
+	jmp front
+PLUS: 	
+	inc [COUNTER]
+	jmp COUNT
+MINUS: 
+	dec [COUNTER]
+	jmp COUNT    
+
+;TABLE LAY OUT
+
+	
+begin: 
+	sub si,si
+	mov cx,25*80
+	L0:
+		mov ax,es:[si]
+		mov saved[si],ax
+		inc si
+		inc si
+	loop L0	
+
+	mov dx, 1720h
+	mov cx, 80*25
+	mov di,0
+	LT0:
+	mov word ptr es:[di], dx
+	inc di
+	inc di
+	loop LT0
+
+	mov dx, 172Dh
+
+	mov cx, 79
+	mov di,0
+	LT1:
+	mov word ptr es:[di], dx
+	inc di
+	inc di
+	loop LT1
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 9
+	mov ah, 17h
+	sub si,si
+	mov di,162
+	LT2:
+		mov al, CHARACTER[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LT2
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 11
+	mov ah, 17h
+	sub si,si
+	mov di,208
+	LT3:
+		mov al, HEXADECIMAL[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LT3
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 11
+	mov ah, 17h
+	sub si,si
+	mov di,242
+	LT4:
+		mov al, OCTADECIMAL[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LT4
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 7
+	mov ah, 17h
+	sub si,si
+	mov di,280
+	LT5:
+		mov al, DECIMAL[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LT5
+
+COUNT:	
+	sub dx,dx	
+
+	mov dx, 1720h
+	mov cx, 80*23
+	mov di,320
+	LT6:
+	mov word ptr es:[di], dx
+	inc di
+	inc di
+	loop LT6
+
+	mov dx, 177CH
+
+	mov cx, 50
+	mov di,158
+	LT7:
+	mov word ptr es:[di], dx
+	add di,160
+	loop LT7
+
+	mov cx, 50
+	sub di,di
+	LT8:
+	mov word ptr es:[di], dx
+	add di,160
+	loop LT8
+
+	mov cx, 50
+	mov di, 46
+	LT9:
+	mov word ptr es:[di], dx
+	add di,160
+	loop LT9
+
+	mov cx, 50
+	mov di, 80
+	LT10:
+	mov word ptr es:[di], dx
+	add di,160
+	loop LT10
+
+	mov cx, 50
+	mov di, 118
+	LT11:
+	mov word ptr es:[di], dx
+	add di,160
+	loop LT11
+
+	mov dx, 172Dh
+
+	mov word ptr es:[di], dx
+
+	mov cx, 80
+	mov di, 3840
+	LT12:
+	mov word ptr es:[di], dx
+	inc di
+	inc di
+	loop LT12
+
+	mov cx, 80
+	mov di, 320
+	LT13:
+	mov word ptr es:[di], dx
+	inc di
+	inc di
+	loop LT13	
+
+;TURNING PAGES
+
+	mov ax,[COUNTER]
+	mov es:[3998], ax
+	
+	mov bx, 1731h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je PAGE1
+	
+	mov bx, 1732h
+	mov ax,[counter]
+	cmp ax,bx
+	je BUMP
+
+	mov bx, 1733h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP
+
+	mov bx, 1734h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP
+
+	mov bx, 1735h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP
+
+	mov bx, 1736h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP
+	
+	mov bx, 1737h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP
+
+	mov bx, 1738h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP
+
+	inc [COUNTER]
+	
+	mov ax,[COUNTER]
+	mov es:[4000], ax	
+	
+	je PAGE1
+
+;Page 1
+;Decimal 
+
+BUMP: je BOOST1
+
+PAGE1:
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx	
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1730h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,618
+	mov cx,10
+	LPG1D0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG1D0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1731h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,2218
+	mov cx,10
+	LPG1D1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG1D1
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1732h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,3818
+	mov cx,1
+	LPG1D2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG1D2
+
+jmp boostavoid
+
+	
+BOOST1: je BOOST2
+
+;Octadecimal
+
+boostavoid:
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1730h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,578
+	mov cx,8
+	LPG1O0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG1O0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1731h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,1858
+	mov cx,8
+	LPG1O1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG1O1
+
+jmp boostavoid1
+
+BOOST2: je BOOST3
+
+boostavoid1:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1732h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,3138
+	mov cx,5
+	LPG1O2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG1O2
+
+;Hexadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1730h
+	mov bx,1730h
+	mov di,542
+	mov cx,10
+	LPG1H0:	
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG1H0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1730h
+	mov bx,1741h
+	mov di,2142
+	mov cx,6
+	LPG1H1:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG1H1
+
+
+
+jmp boostavoid2
+
+BOOST3: je BOOST4
+
+boostavoid2:
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1731h
+	mov bx,1730h
+	mov bl, 30h
+	mov di,3102
+	mov cx,5
+	LPG1H2:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG1H2
+
+	;Characters
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 6
+	mov ah, 17h
+	sub si,si
+	mov di,482
+	LPG1C0:
+		mov al, NULL[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C0
+
+jmp boostavoid3
+
+BOOST4: je BOOST5
+
+boostavoid3:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 18
+	mov bh, 17h
+	sub si,si
+	mov di,642
+	LPG1C1:
+		mov bl, STARTOFHEADING[si]
+		mov es:[di],bx
+		inc di
+		inc di
+		inc si
+		loop LPG1C1
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 15
+	mov dh, 17h
+	sub si,si
+	mov di,802
+	LPG1C2:
+		mov dl, STARTOFTEXT[si]
+		mov es:[di],dx
+		inc di
+		inc di
+		inc si
+		loop LPG1C2
+
+jmp boostavoid4
+
+BOOST5: je BOOST6
+
+boostavoid4:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 13
+	mov ah, 17h
+	sub si,si
+	mov di,962
+	LPG1C3:
+		mov al, ENDOFTEXT[si]
+		mov es:[di],ax
+		add di,2
+		inc si
+		loop LPG1C3
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 21
+	mov ah, 17h
+	sub si,si
+	mov di,1122
+	LPG1C4:
+		mov al, ENDOFTRANSMISSION[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C4
+
+jmp boostavoid5
+
+BOOST6: je BOOST7
+
+boostavoid5:
+
+	mov ax, 0b800h
+	mov es, bx
+	mov cx, 9
+	mov bh, 17h
+	sub si,si
+	mov di,1282
+	LPG1C5:
+		mov al, ENQUIRY[si]
+		mov es:[di],bx
+		inc di
+		inc di
+		inc si
+		loop LPG1C5
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 13
+	mov dh, 17h
+	sub si,si
+	mov di,1442
+	LPG1C6:
+		mov dl, ACKNOWLEDGE[si]
+		mov es:[di],dx
+		inc di
+		inc di
+		inc si
+		loop LPG1C6
+
+jmp boostavoid6
+
+BOOST7: je BOOST8
+
+boostavoid6:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 6
+	mov ah, 17h
+	sub si,si
+	mov di,1602
+	LPG1C7:
+		mov al, BELL[si]
+		mov es:[di],ax
+		add di,2
+		inc si
+		loop LPG1C7
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 11
+	mov bh, 17h
+	sub si,si
+	mov di,1762
+	LPG1C8:
+		mov bl, BACKSPACE[si]
+		mov es:[di],bx
+		add di,2
+		inc si
+		loop LPG1C8
+
+jmp boostavoid7
+
+BOOST8: je BOOST9
+
+boostavoid7:
+		
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 16
+	mov dh, 17h
+	sub si,si
+	mov di,1922
+	LPG1C9:
+		mov dl, HORIZONTALTAB[si]
+		mov es:[di],dx
+		inc di
+		inc di
+		inc si
+		loop LPG1C9
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 11
+	mov ah, 17h
+	sub si,si
+	mov di,2082
+	LPG1C10:
+		mov al, L[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C10
+
+jmp boostavoid8
+
+BOOST9: je BOOST10
+
+boostavoid8:
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 14
+	mov bh, 17h
+	sub si,si
+	mov di,2242
+	LPG1C11:
+		mov bl, VERTICALTAB[si]
+		mov es:[di],bx
+		inc di
+		inc di
+		inc si
+		loop LPG1C11
+	
+	mov ax, 0b800h
+	mov es, ax
+	FORMFEED db "[FORM FEED]"
+	mov cx, 11
+	mov dh, 17h
+	sub si,si
+	mov di,2402
+	LPG1C12:
+		mov dl, FORMFEED[si]
+		mov es:[di],dx
+		inc di
+		inc di
+		inc si
+		loop LPG1C12
+
+jmp boostavoid9
+
+BOOST10: je BOOST11
+
+boostavoid9:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 17
+	mov ah, 17h
+	sub si,si
+	mov di,2562
+	LPG1C13:
+		mov al, CARRIAGERETURN[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C13
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 11
+	mov ah, 17h
+	sub si,si
+	mov di,2722
+	LPG1C14:
+		mov al, SHIFTOUT[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C14
+
+jmp boostavoid10
+
+BOOST11: je BOOST12
+
+boostavoid10:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 10
+	mov ah, 17h
+	sub si,si
+	mov di,2882
+	LPG1C15:
+		mov al, SHIFTIN[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C15
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 18
+	mov ah, 17h
+	sub si,si
+	mov di,3042
+	LPG1C16:
+		mov al, DATALINKESCAPE[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C16
+
+jmp boostavoid11
+
+BOOST12: je BOOST13
+
+boostavoid11:
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 18
+	mov ah, 17h
+	sub si,si
+	mov di,3202
+	LPG1C17:
+		mov al, DEVICECONTROL1[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C17
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 18
+	mov ah, 17h
+	sub si,si
+	mov di,3362
+	LPG1C18:
+		mov al, DEVICECONTROL2[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C18
+
+jmp boostavoid12
+
+BOOST13: je BOOST14
+
+boostavoid12:
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 18
+	mov ah, 17h
+	sub si,si
+	mov di,3522
+	LPG1C19:
+		mov al, DEVICECONTROL3[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C19
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 18
+	mov ah, 17h
+	sub si,si
+	mov di,3682
+	LPG1C20:
+		mov al, DEVICECONTROL4[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG1C20
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	jmp front
+
+BOOST14: je BOOST15
+
+
+BOOST15:
+	
+	mov ax,[COUNTER]
+	mov es:[3998], ax
+
+	mov bx, 1732h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je PAGE2
+
+	mov bx, 1733h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP1
+
+	mov bx, 1734h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP1
+
+	mov bx, 1735h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP1
+
+	mov bx, 1736h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP1
+	
+	mov bx, 1737h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP1
+
+	mov bx, 1738h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP1
+
+	BUMP1: je BOOST16
+
+;Page 2
+;Decimal 
+	
+PAGE2:
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1732h
+	mov bx,1731h
+	mov dx,1730h
+	mov di,618
+	mov cx,9
+	LPG2D0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG2D0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1733h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,2058
+	mov cx,10
+	LPG2D1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG2D1
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1734h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,3658
+	mov cx,2
+	LPG2D2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG2D2
+
+jmp boostavoid13
+
+BOOST16: je BOOST17
+
+boostavoid13:
+
+;Octadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1732h
+	mov bx,1735h
+	mov dx,1730h
+	mov di,578
+	mov cx,3
+	LPG2O0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG2O0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1733h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,1058
+	mov cx,8
+	LPG2O1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG2O1
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1734h
+	mov bx,1730h
+	mov dx,1730h
+	mov cx,8
+	LPG2O2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG2O2
+
+jmp boostavoid14
+
+BOOST17: je BOOST18
+
+boostavoid14:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1735h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,3618
+	mov cx,2
+	LPG2O3:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG2O3
+
+;Hexadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax, 1731h
+	mov bx, 1735h
+	mov di,542
+	mov cx,5
+	LPG2H0:	
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG2H0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1731h
+	mov bx,1741h
+	mov di,1342
+	mov cx,6
+	LPG2H1:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG2H1
+
+jmp boostavoid15
+
+BOOST18: je BOOST19
+
+boostavoid15:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1732h
+	mov bx,1730h
+	mov di,2302
+	mov cx,10
+	LPG2H2:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG2H2
+
+
+;Characters
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 22
+	mov ah, 17h
+	sub si,si
+	mov di,482
+	LPG2C0:
+		mov al, NEGATIVEACKNOWLEDGE[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C0
+
+jmp boostavoid16
+
+BOOST19: je BOOST20
+
+boostavoid16:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 18
+	mov ah, 17h
+	sub si,si
+	mov di,642
+	LPG2C1:
+		mov al, SYNCHRONOUSIDLE[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C1
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 21
+	mov ah, 17h
+	sub si,si
+	mov di,802
+	LPG2C3:
+		mov al, ENDOFTRANSBLOCK[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C3
+
+jmp boostavoid17
+
+BOOST20: je BOOST21
+
+boostavoid17:
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 8
+	mov ah, 17h
+	sub si,si
+	mov di,962
+	LPG2C4:
+		mov al, CANCEL[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C4
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 15
+	mov ah, 17h
+	sub si,si
+	mov di,1122
+	LPG2C5:
+		mov al, ENDOFMEDIUM[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C5	
+
+jmp boostavoid18
+
+BOOST21: je BOOST22
+
+boostavoid18:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 12
+	mov ah, 17h
+	sub si,si
+	mov di,1282
+	LPG2C6:
+		mov al, SUBSTITUTE[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C6
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 8
+	mov ah, 17h
+	sub si,si
+	mov di,1442
+	LPG2C7:
+		mov al, ESCAPE[si]
+		mov es:[di],ax
+		add di,2
+		inc si
+		loop LPG2C7
+
+jmp boostavoid19
+
+BOOST22: je BOOST23
+
+boostavoid19:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 16
+	mov ah, 17h
+	sub si,si
+	mov di,1602
+	LPG2C8:
+		mov al, FILESEPARATOR[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C8
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 17
+	mov ah, 17h
+	sub si,si
+	mov di,1762
+	LPG2C9:
+		mov al, GROUPSEPARATOR[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C9
+
+jmp boostavoid20
+
+BOOST23: je BOOST24
+
+boostavoid20:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 18
+	mov ah, 17h
+	sub si,si
+	mov di,1922
+	LPG2C10:
+		mov al, RECORDSEPARATOR[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C10
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 16
+	mov ah, 17h
+	sub si,si
+	mov di,2082
+	LPG2C11:
+		mov al, UNITSEPARATOR[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C11
+
+jmp boostavoid21
+
+BOOST24: je BOOST25
+
+boostavoid21:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov cx, 7
+	mov ah, 17h
+	sub si,si
+	mov di,2242
+	LPG2C12:
+		mov al, SPACE[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG2C12
+
+	mov ax, 0b800h
+	mov es, ax	
+	mov cx, 9
+	mov di, 2402
+	mov ah, 17h
+	mov al, 21h
+	LPG2C13:
+		mov es:[di],ax
+		inc ax
+		add di,160
+		loop LPG2C13
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+	
+	jmp front
+
+BOOST25:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,[COUNTER]
+	mov es:[3998], ax
+	
+	mov bx, 1733h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je PAGE3
+
+	mov bx, 1734h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP2
+
+	mov bx, 1735h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP2
+
+	mov bx, 1736h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP2
+	
+	mov bx, 1737h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP2
+	
+	mov bx, 1738h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP2
+
+	BUMP2: je BOOST27
+
+
+;Page 3
+;Decimal 
+PAGE3: 
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1734h
+	mov bx,1732h
+	mov dx,1730h
+	mov di,618
+	mov cx,8
+	LPG3D0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG3D0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1735h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,1898
+	mov cx,10
+	LPG3D1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG3D1
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1736h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,3498
+	mov cx,3
+	LPG3D2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG3D2
+
+jmp boostavoid22	
+
+BOOST27: je BOOST28
+
+boostavoid22:
+
+;Octadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1735h
+	mov bx,1732h
+	mov dx,1730h
+	mov di,578
+	mov cx,6
+	LPG3O0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG3O0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1736h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,1538
+	mov cx,8
+	LPG3O1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG3O1
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1737h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,2818
+	mov cx,7
+	LPG3O2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG3O2
+
+jmp boostavoid23
+
+BOOST28: je BOOST29
+
+boostavoid23:
+
+;Hexadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1732h
+	mov bx,1741h
+	mov di,542
+	mov cx,6
+	LPG3H0:	
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG3H0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1733h
+	mov bx,1730h
+	mov di,1502
+	mov cx,10
+	LPG3H1:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG3H1
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1733h
+	mov bx,1741h
+	mov di,3102
+	mov cx,5
+	LPG3H2:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG3H2
+
+jmp boostavoid24
+
+BOOST29: je BOOST30
+
+boostavoid24:
+
+;Character
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax	
+	mov cx, 21
+	mov di, 482
+	mov ah, 17h
+	mov al, 2Ah
+	LPG3C0:
+		mov es:[di],ax
+		inc ax
+		add di,160
+		loop LPG3C0
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	jmp front
+
+BOOST30: 
+	mov ax,[COUNTER]
+	mov es:[3998], ax
+	
+	mov bx, 1734h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je PAGE4
+
+	mov bx, 1735h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP3
+
+	mov bx, 1736h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP3
+	
+	mov bx, 1737h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP3
+
+	
+	mov bx, 1738h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP3
+
+	BUMP3: je BOOST31
+
+	
+;Page 4
+;Decimal 
+
+PAGE4:	
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1736h
+	mov bx,1733h
+	mov dx,1730h
+	mov di,618
+	mov cx,7
+	LPG4D0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4D0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1737h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,1738
+	mov cx,10
+	LPG4D1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4D1
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1738h
+	mov bx,1730h
+	mov dx,1730h
+	mov dl, 30h
+	mov di,3338
+	mov cx,4
+	LPG4D2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4D2	
+
+jmp boostavoid25
+
+BOOST31: je BOOST32
+
+boostavoid25:
+
+;Octadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1737h
+	mov bx,1737h
+	mov dx,1730h
+	mov di,578
+	mov cx,1
+	LPG4O0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4O0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1730h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,738
+	mov cx,8
+	LPG4O1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4O1
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1731h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,2018
+	mov cx,8
+	LPG4O2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4O2
+
+jmp boostavoid26
+
+BOOST32: je BOOST33
+
+boostavoid26:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1732h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,3298
+	mov cx,4
+	LPG4O3:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4O3
+
+	;Hexadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1733h
+	mov bx,1746h
+	mov di,542
+	mov cx,1
+	LPG4H0:	
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4H0
+ 
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1734h
+	mov bx,1730h
+	mov di,702
+	mov cx,10
+	LPG4H1:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4H1
+
+jmp boostavoid27
+
+BOOST33: je BOOST34
+
+boostavoid27:	
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1734h
+	mov bx,1741h
+	mov di,2302
+	mov cx,6
+	LPG4H2:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4H2
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1735h
+	mov bx,1730h
+	mov di,3262
+	mov cx,4
+	LPG4H3:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG4H3
+	
+	;Character
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax	
+	mov cx, 21
+	mov di, 482
+	mov ah, 17h
+	mov al, 3Fh
+	LPG4C0:
+		mov es:[di],ax
+		inc ax
+		add di,160
+		loop LPG4C0
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+	
+	jmp front
+
+
+BOOST34:
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,[COUNTER]
+	mov es:[3998], ax
+	
+	mov bx, 1735h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je PAGE5
+
+	mov bx, 1736h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP4
+	
+	mov bx, 1737h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP4
+
+	mov bx, 1738h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMP4
+
+	BUMP4: je BOOST35
+
+;Page 5
+;Decimal 
+	
+PAGE5:
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1738h
+	mov bx,1734h
+	mov dx,1730h
+	mov di,618
+	mov cx,6
+	LPG5D0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG5D0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1739h
+	mov bx,1730h
+	mov dx,1730h
+	mov di,1578
+	mov cx,10
+	LPG5D1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG5D1
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1730h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,3178
+	mov cx,5
+	LPG5D2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG5D2
+
+jmp boostavoid28
+
+BOOST35: je BOOST36
+
+boostavoid28:
+	
+;Octadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1732h
+	mov bx,1734h
+	mov dx,1731h
+	mov di,578
+	mov cx,4
+	LPG5O0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG5O0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1733h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,1218
+	mov cx,8
+	LPG5O1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG5O1
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1735h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,2498
+	mov cx,8
+	LPG5O2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG5O2
+
+jmp boostavoid29
+
+BOOST36: je BOOST37
+
+boostavoid29:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1735h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,3778
+	mov cx,1
+	LPG5O3:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG5O3
+
+	;Hexadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1735h
+	mov bx,1734h
+	mov di,542
+	mov cx,6
+	LPG5H0:	
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG5H0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1736h
+	mov bx,1741h
+	mov di,1502
+	mov cx,6
+	LPG5H1:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG5H1
+
+jmp boostavoid30
+	
+BOOST37: je BOOST38
+
+boostavoid30:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1736h
+	mov bx,1730h
+	mov di,2462
+	mov cx,9
+	LPG5H2:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG5H2
+	
+	;Character
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax	
+	mov cx, 21
+	mov di, 482
+	mov ah, 17h
+	mov al, 54h
+	LPG5C0:
+		mov es:[di],ax
+		inc ax
+		add di,160
+		loop LPG5C0
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	jmp front
+
+BOOST38:
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,[COUNTER]
+	mov es:[3998], ax
+
+	mov bx, 1736h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je PAGE6
+	
+	mov bx, 1737h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMPLAST
+
+	mov bx, 1738h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je BUMPLAST
+
+;Page 6
+;Decimal 
+
+PAGE6:	
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1730h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,618
+	mov cx,5
+	LPG6D0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG6D0
+
+jmp boostavoid31
+
+BUMPLAST: je BOOST39
+
+boostavoid31:
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1731h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,1418
+	mov cx,10
+	LPG6D1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG6D1
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1732h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,3018
+	mov cx,6
+	LPG6D2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG6D2
+
+jmp boostavoid32
+
+BOOST39: je BOOST40 
+
+boostavoid32:
+	
+;Octadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1735h
+	mov bx,1731h
+	mov dx,1731h
+	mov di,578
+	mov cx,7
+	LPG6O0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG6O0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1736h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,1698
+	mov cx,8
+	LPG6O1:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG6O1
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1737h
+	mov bx,1730h
+	mov dx,1731h
+	mov di,2978
+	mov cx,6
+	LPG6O2:
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG6O2
+
+jmp boostavoid33
+
+BOOST40: je BOOST41
+
+boostavoid33:
+
+;Hexadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1736h
+	mov bx,1730h
+	mov di,542
+	mov cx,1
+	LPG6H0:	
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG6H0
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1738h
+	mov bx,1741h
+	mov di,702
+	mov cx,6
+	LPG6H1:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG6H1
+
+jmp boostavoid34
+
+BOOST41: je BOOST42
+
+boostavoid34:
+	
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1737h
+	mov bx,1730h
+	mov di,1662
+	mov cx,10
+	LPG6H2:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG6H2
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,1737h
+	mov bx,1741h
+	mov di,3262
+	mov cx,4
+	LPG6H3:
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG6H3
+	
+	;Character
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax	
+	mov cx, 21
+	mov di, 482
+	mov ah, 17h
+	mov al, 69h
+	LPG6C0:
+		mov es:[di],ax
+		inc ax
+		add di,160
+		loop LPG6C0
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+	
+	jmp front
+
+BOOST42: 
+	mov ax, 0b800h
+	mov es, ax
+	mov ax,[COUNTER]
+	mov es:[3998], ax
+	
+	mov bx, 1737h
+	mov ax,[COUNTER]
+	cmp ax,bx
+	je PAGE7
+
+	dec [COUNTER]
+	mov ax, [COUNTER]
+	mov word ptr es:[3998], ax
+	jmp PAGE7
+
+;Page 7
+;Decimal 
+	
+PAGE7:	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ah, 17h
+	mov al, 32h
+	mov bh, 17h
+	mov bl, 36h
+	mov dh, 17h
+	mov dl, 31h
+	mov di,618
+	mov cx, 2
+	LPG7D0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG7D0
+
+;Octadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+	sub dx, dx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ah, 17h
+	mov al, 37h
+	mov bh, 17h
+	mov bl, 36h
+	mov dh, 17h
+	mov dl, 31h
+	mov di,578
+	mov cx,2
+	LPG7O0:	
+		mov es:[di], dx
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG7O0
+
+;Hexadecimal
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+
+	mov ax, 0b800h
+	mov es, ax
+	mov ah, 17h
+	mov al, 37h
+	mov bh, 17h
+	mov bl, 45h
+	mov di,542
+	mov cx,2
+	LPG7H0:	
+		mov es:[di+2], ax
+		mov es:[di+4], bx
+		inc bx
+		add di,160
+		loop LPG7H0
+	
+	;Character
+
+	sub ax, ax
+	sub bx, bx
+	sub cx, cx
+
+	mov ax, 0b800h
+	mov es, ax	
+	mov cx, 1
+	mov di, 482
+	mov ah, 17h
+	mov al, 7Eh
+	LPG7C0:
+		mov es:[di],ax
+		inc ax
+		add di,160
+		loop LPG7C0
+
+	mov ax, 0b800h
+	mov es, ax
+	DEL db "[DEL]"
+	mov cx, 5
+	mov ah, 17h
+	sub si,si
+	mov di, 642
+	LPG7C1:
+		mov al, DEL[si]
+		mov es:[di],ax
+		inc di
+		inc di
+		inc si
+		loop LPG7C1
+
+	jmp front
+
+	cseg ends
+
+	end start 
