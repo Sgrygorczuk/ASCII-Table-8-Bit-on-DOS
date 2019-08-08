@@ -1,29 +1,4 @@
-# README #
-
-This README would normally document whatever steps are necessary to get your application up and running.
-
-### What is this repository for? ###
-
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
-
-### How do I get set up? ###
-
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+# ASCII-Table-8-Bit-on-DOS
+This program was made for Assembly Languge CSC 21000 class. 
+This is my program for priting a ascii table I'm going to explain how I think everypart of it is supposed to work, and what bugs I encounted and couldn't take out 
+Over all we start by desginating the variable counter and moving the es register to 0b800h. After that we jump to begining where the talbe is printed as well as the first page that I set it on. After the first page is printed I  jump back to the front of the program where the user can input '-' to go back, '+' t go forward and 'Q' to end the program.  From there the program will use what I called BOOSTS which is jumps across one page to get to the other. the BOOOST jumps are surrouned by avoidboost jumps so that if the current page is running it dosen't have any chance of jumping off to anotherpage. 
